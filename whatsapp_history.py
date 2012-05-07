@@ -31,7 +31,7 @@ def get_backup_folder():
 		appdata = os.environ["APPDATA"]
 		backups_folder = os.path.join(appdata, r"Apple Computer\MobileSync\Backup")
 	elif sys.platform == "darwin":
-		backups_folder = "/Library/Application Support/MobileSync/Backup"
+		backups_folder = os.path.expanduser("~/Library/Application Support/MobileSync/Backup")
 	else:
 		print("Unsupported system: %s" % sys.platform)
 		return None
