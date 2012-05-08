@@ -28,8 +28,7 @@ def get_backup_folder():
 
 	backups_folder = None
 	if sys.platform == "win32":
-		appdata = os.environ["APPDATA"]
-		backups_folder = os.path.join(appdata, r"Apple Computer\MobileSync\Backup")
+		backups_folder = os.path.expandvars(r"%appdata%\Apple Computer\MobileSync\Backup")
 	elif sys.platform == "darwin":
 		backups_folder = os.path.expanduser("~/Library/Application Support/MobileSync/Backup")
 	else:
