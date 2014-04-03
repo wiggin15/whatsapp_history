@@ -46,9 +46,9 @@ ROWTEMPLATE = """<tr style="background-color: %s"><td>%s</td><td>%s</td><td>%s</
 
 OUTPUT_DIR = "output_%s" % (strftime("%Y_%m_%d"))
 MEDIA_DIR = os.path.join(OUTPUT_DIR, "media")
+CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
 if not os.path.exists(MEDIA_DIR):
 	os.makedirs(MEDIA_DIR)
-CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
 
 FIELDS = "ZFROMJID, ZTEXT, ZMESSAGEDATE, ZMESSAGETYPE, ZGROUPEVENTTYPE, ZGROUPMEMBER, ZMEDIAITEM"
 
@@ -80,7 +80,7 @@ def handle_media(conn, backup_extractor, mtype, mmediaitem):
 	mediadata = ["ZMEDIALOCALPATH", "ZMEDIALOCALPATH", "ZMEDIALOCALPATH", "ZVCARDNAME",
 	             "ZLATITUDE, ZLONGITUDE"][mtype-1]
 	data = get_media_data(conn, mmediaitem, mediadata)
-	mtypestr = ["image", "video", "audio", "contact", "location"][mtype-1]
+	mtypestr = {1: "image", 2: "video", 3: "audio", 4: "contact", 5: "location"}[mtype]
 	if data[0] is None:
 		return "[missing {}]".format(mtypestr)
 	data = ", ".join([str(x) for x in data])
@@ -94,6 +94,8 @@ def handle_media(conn, backup_extractor, mtype, mmediaitem):
 		controls = "" if mtype == 1 else " controls"
 		return tag_format.format(tag, os.path.basename(new_media_path), controls)
 	if mtype == 4 and data.startswith("="):
+		# if the vCard has no contact image the format of the row in the db is a little different,
+		# and name is encoded using quopri encoding
 		try:
 			data = str(codecs.decode(bytes(data, "ascii"), "quopri"), "utf-8")
 		except:
@@ -105,19 +107,12 @@ def get_text(conn, backup_extractor, row):
 	if mtype == 0:
 		return mtext
 	if mtype == 6:
-		if mgroupmember is None:
-			mgroupmember = "you"
-		else:
-			mgroupmember = get_group_member_name(conn, mgroupmember)
-		if mgroupeventtype == 1:
-			return "[{} changed the group subject to {}]".format(mgroupmember, mtext)
-		if mgroupeventtype == 2:
-			return "[{} joined]".format(mgroupmember)
-		if mgroupeventtype == 3:
-			return "[{} left]".format(mgroupmember)
-		if mgroupeventtype == 4:
-			return "[{} changed the group photo]".format(mgroupmember)
-		return "[group event {} by {}]".format(mgroupeventtype, mgroupmember)
+		mgroupmember = "you" if mgroupmember is None else get_group_member_name(conn, mgroupmember)
+		if mgroupeventtype not in [1, 2, 3, 4]:
+			return "[group event {} by {}]".format(mgroupeventtype, mgroupmember)
+		change_text = {1: "changed the group subject to {}".format(mtext),
+		               2: "joined", 3: "left", 4: "changed the group photo"}
+		return "[{} {}]".format(mgroupmember, change_text[mgroupeventtype])
 	if mtype in [1, 2, 3, 4, 5]:
 		return handle_media(conn, backup_extractor, mtype, mmediaitem)
 	return "[message type %d]" % mtype
@@ -150,8 +145,7 @@ def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, y
 	c = conn.cursor()
 	c.execute("SELECT {} FROM ZWAMESSAGE WHERE ZFROMJID=? OR ZTOJID=?;".format(FIELDS), (contact_id, contact_id))
 	for row in c:
-		mfrom, mtext, mdate, mtype, mgroupeventtype, mgroupmember, mmediaitem = row
-		mdatetime = get_date(mdate)
+		mdatetime = get_date(row[2])
 		mtext = get_text(conn, backup_extractor, row)
 		mfrom, color = get_from(conn, is_group, contact_id, contact_name, your_name, row)
 		html.write((ROWTEMPLATE % (color, mdatetime, mfrom, mtext)))
