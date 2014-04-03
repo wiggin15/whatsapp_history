@@ -149,20 +149,17 @@ def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, y
 	html.write(TEMPLATEBEGINNING)
 	c = conn.cursor()
 	c.execute("SELECT COUNT(*) FROM ZWAMESSAGE WHERE ZFROMJID=? OR ZTOJID=?;", (contact_id, contact_id))
-	for count in c:
-		totalmessages = count[0]
+	total_messages = next(c)[0]
 
 	c.execute("SELECT {} FROM ZWAMESSAGE WHERE ZFROMJID=? OR ZTOJID=?;".format(FIELDS), (contact_id, contact_id))
-	done = 0
 	previouspercent = 0
-	for row in c:
+	for index, row in enumerate(c):
 		mfrom, mtext, mdate, mtype, mgroupeventtype, mgroupmember, mmediaitem = row
 		mdatetime = get_date(mdate)
 		mtext = get_text(conn, backup_extractor, row)
 		mfrom, color = get_from(conn, is_group, contact_id, contact_name, your_name, row)
 		html.write((ROWTEMPLATE % (color, mdatetime, mfrom, mtext)))
-		done = done + 1
-		percent = round(float(done)/totalmessages*100)
+		percent = (round(float(index+1) / total_messages*100)
 		if percent != previouspercent:
 			bar = "[%s%s]" % ("#"*int(percent/10),"-"*(10-int(percent/10)))
 			print("%s %d%% done" % (bar, percent), end="\r")
