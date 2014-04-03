@@ -76,7 +76,7 @@ def main():
 
 	shutil.copy(whatsapp_chat_file, chat_output.CHAT_STORAGE_FILE)
 
-	chat_output.main()
+	chat_output.main(backup_extractor)
 
 	os.remove(chat_output.CHAT_STORAGE_FILE)
 
