@@ -8,6 +8,7 @@ TEMPLATEBEGINNING = """
 <html>
 <head>
 <title>WhatsApp Conversation</title>
+<meta charset="utf-8">
 <style type="text/css">
 body {
 	font-family: Helvetica Neue;
@@ -74,7 +75,7 @@ def output_contact(conn, contact_id, contact_name, your_name):
 		percent = round(float(done)/totalmessages*100)
 		if percent != previouspercent:
 			bar = "[%s%s]" % ("#"*int(percent/10),"-"*(10-int(percent/10)))
-			print("%s: %s %d%% done"%(contact_name.ljust(20), bar, percent), end="\r")
+			print("%s %d%% done" % (bar, percent), end="\r")
 			previouspercent = percent
 	print()
 	html.write(TEMPLATEEND)
