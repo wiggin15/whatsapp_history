@@ -1,3 +1,7 @@
+# TODO getting phone numbers from addressbook is israel-specific and weird
+# TODO support groups - using chat_message_join and chat_handle_join db db
+# TODO support atttachments - using message_attachment_join in db
+
 import sqlite3
 import os
 
