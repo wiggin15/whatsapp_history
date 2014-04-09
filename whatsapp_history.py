@@ -7,6 +7,7 @@ import re
 import datetime
 import mbdb
 import chat_output
+import sms_output as sms_output
 
 class BackupExtractor():
 	def _backup_time(self, backup_dir):
@@ -65,20 +66,37 @@ class BackupExtractor():
 	def get_file_path(self, domain, filename):
 		return self.file_index.get((domain, filename), None)
 
-def main():
-	backup_extractor = BackupExtractor()
-
+def main_whatsapp(backup_extractor):
 	whatsapp_chat_file = backup_extractor.get_file_path("AppDomain-net.whatsapp.WhatsApp", "Documents/ChatStorage.sqlite")
 
 	if whatsapp_chat_file is None:
 		print("Could not find WhatsApp Chat file")
-		sys.exit()
+		return
 
 	shutil.copy(whatsapp_chat_file, chat_output.CHAT_STORAGE_FILE)
-
 	chat_output.main(backup_extractor)
-
 	os.remove(chat_output.CHAT_STORAGE_FILE)
+
+def main_sms(backup_extractor):
+	sms_db_file = backup_extractor.get_file_path("HomeDomain", "Library/SMS/sms.db")
+	addressbook = backup_extractor.get_file_path("HomeDomain", "Library/AddressBook/AddressBook.sqlitedb")
+
+	if sms_db_file is None or addressbook is None:
+		print("Could not find SMS files")
+		return
+
+	shutil.copy(sms_db_file, sms_output.CHAT_STORAGE_FILE)
+	shutil.copy(addressbook, sms_output.CONTACT_FILE)
+	sms_output.main(backup_extractor)
+	os.remove(sms_output.CHAT_STORAGE_FILE)
+	os.remove(sms_output.CONTACT_FILE)
+
+def main():
+	backup_extractor = BackupExtractor()
+	if len(sys.argv) == 2 and sys.argv[1] == "sms":
+		main_sms(backup_extractor)
+	else:
+		main_whatsapp(backup_extractor)
 
 if __name__ == "__main__":
 	main()

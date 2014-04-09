@@ -12,7 +12,7 @@ COLORS = ["#f8ff78", "#85d7ff", "cornsilk", "lightpink", "lightgreen", "yellowgr
 TEMPLATEBEGINNING = """
 <html>
 <head>
-<title>WhatsApp Conversation</title>
+<title>%s Conversation</title>
 <meta charset="utf-8">
 <style type="text/css">
 body {
@@ -147,7 +147,7 @@ def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, y
 	global next_color
 	next_color = 0
 	html = open(os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name)), 'w', encoding="utf-8")
-	html.write(TEMPLATEBEGINNING)
+	html.write(TEMPLATEBEGINNING % ("WhatsApp",))
 	c = conn.cursor()
 	c.execute("SELECT {} FROM ZWAMESSAGE WHERE ZFROMJID=? OR ZTOJID=?;".format(FIELDS), (contact_id, contact_id))
 	for row in c:
@@ -167,6 +167,7 @@ def iterate_with_progress(iterator, count):
 			bar = "[%s%s]" % ("#"*int(percent/10),"-"*(10-int(percent/10)))
 			print("%s %d%% done" % (bar, percent), end="\r")
 			previouspercent = percent
+	print()
 
 def main(backup_extractor):
 	conn = sqlite3.connect(CHAT_STORAGE_FILE)
