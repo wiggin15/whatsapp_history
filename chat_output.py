@@ -137,10 +137,16 @@ def get_date(mdate):
 	mdatetime = mdatetime.strftime("%Y-%m-%d %H:%M:%S")
 	return mdatetime
 
+def sanitize_filename(f):
+	invalid_chars = "?*/\\:\"<>|"
+	for char in invalid_chars:
+		f = f.replace(char, "-")
+	return f
+
 def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, your_name):
 	global next_color
 	next_color = 0
-	html = open(os.path.join(OUTPUT_DIR, '%s.html' % contact_name), 'w', encoding="utf-8")
+	html = open(os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name)), 'w', encoding="utf-8")
 	html.write(TEMPLATEBEGINNING)
 	c = conn.cursor()
 	c.execute("SELECT {} FROM ZWAMESSAGE WHERE ZFROMJID=? OR ZTOJID=?;".format(FIELDS), (contact_id, contact_id))
