@@ -1,6 +1,3 @@
-# TODO replace emoji with images?
-# TODO time sort isn't accurate
-
 import sqlite3
 from time import strftime
 from datetime import datetime
