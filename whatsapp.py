@@ -91,6 +91,7 @@ def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, y
 	for row in c:
 		mdatetime = get_date(row[2])
 		mtext = get_text(conn, backup_extractor, row)
+		mtext = mtext.replace("\n", "<br>\n")
 		mfrom, color = get_from(conn, is_group, contact_id, contact_name, your_name, row)
 		html.write((ROWTEMPLATE % (color, mdatetime, mfrom, mtext)))
 	html.write(TEMPLATEEND)
