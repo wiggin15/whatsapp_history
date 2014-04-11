@@ -60,6 +60,11 @@ def get_color(contact):
 	next_color += 1
 	return cached_colors[contact]
 
+def reset_colors():
+	global next_color, cached_colors
+	cached_colors = {}
+	next_color = 0
+
 cached_members = {}
 def get_group_member_name(conn, id):
 	if id in cached_members:
@@ -89,7 +94,7 @@ def handle_media(conn, backup_extractor, mtype, mmediaitem):
 		shutil.copy(filepath, new_media_path)
 		tag_format = '<a href="media/{1}"><{0} src="media/{1}" style="width:200px;"{2}></a>'
 		tag = ["img", "video", "audio"][mtype-1]
-		controls = "" if mtype == 1 else " controls"
+		controls = " controls" if tag in ["audio", "video"] else ""
 		return tag_format.format(tag, os.path.basename(new_media_path), controls)
 	if mtype == 4 and data.startswith("="):
 		# if the vCard has no contact image the format of the row in the db is a little different,
@@ -142,8 +147,7 @@ def sanitize_filename(f):
 	return f
 
 def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, your_name):
-	global next_color
-	next_color = 0
+	reset_colors()
 	html = open(os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name)), 'w', encoding="utf-8")
 	html.write(TEMPLATEBEGINNING % ("WhatsApp",))
 	c = conn.cursor()

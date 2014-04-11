@@ -1,29 +1,19 @@
 import sqlite3
 import os
+import shutil
 
-from chat_output import iterate_with_progress, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_DIR
-from chat_output import COLORS, sanitize_filename, get_date
+from chat_output import iterate_with_progress, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_DIR, MEDIA_DIR
+from chat_output import COLORS, get_color, reset_colors, sanitize_filename, get_date
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "sms.db")
 CONTACT_FILE = os.path.join(OUTPUT_DIR, "AddressBook.sqlitedb")
 
-FIELDS = "text, date, is_from_me"
+FIELDS = "ROWID, text, date, is_from_me, handle_id, cache_has_attachments"
 
-def output_contact(conn, backup_extractor, contact_id, contact_name, your_name):
-	html = open(os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name)), 'w', encoding="utf-8")
-	html.write(TEMPLATEBEGINNING % ("SMS/iMessage",))
-	c = conn.cursor()
-	c.execute("SELECT {} FROM message WHERE handle_id=?;".format(FIELDS), (contact_id,))
-	for row in c:
-		mtext, mdate, is_from_me = row
-		mdatetime = get_date(mdate)
-		mfrom = your_name if is_from_me else contact_name
-		color = COLORS[not is_from_me]
-		html.write((ROWTEMPLATE % (color, mdatetime, mfrom, mtext)))
-	html.write(TEMPLATEEND)
-	html.close()
-
+contact_cache = {}
 def get_contact_name(conn, contact_conn, contact_id):
+	if contact_id in contact_cache:
+		return contact_cache[contact_id]
 	c = conn.cursor()
 	c.execute("SELECT id FROM handle WHERE ROWID=?;", (contact_id,))
 	handle_id = next(c)[0]		# this is either a phone number or an iMessage address
@@ -37,18 +27,76 @@ def get_contact_name(conn, contact_conn, contact_id):
 		for i in c:
 			c2 = contact_conn.cursor()
 			c2.execute("SELECT first, last FROM ABPerson WHERE ROWID=?", i)
-			return " ".join((s for s in next(c2) if s))
+			handle_id = " ".join((s for s in next(c2) if s))
+	contact_cache[contact_id] = handle_id
 	return handle_id
+
+def handle_media(conn, backup_extractor, message_id, mtext):
+	c = conn.cursor()
+	c.execute("SELECT filename, mime_type FROM attachment WHERE ROWID in "\
+		      "(SELECT attachment_id FROM message_attachment_join WHERE message_id=?);", (message_id,))
+	if mtext is None:
+		mtext = ""
+	for row in c:
+		path_in_backup = row[0]
+		if path_in_backup.startswith("/var/mobile/"):
+			path_in_backup = path_in_backup[12:]
+		elif path_in_backup.startswith("~/"):
+			path_in_backup = path_in_backup[2:]
+		filepath = backup_extractor.get_file_path("MediaDomain", path_in_backup)
+		new_media_path = os.path.join(MEDIA_DIR, os.path.basename(path_in_backup))
+		shutil.copy(filepath, new_media_path)
+		tag_format = '<a href="media/{1}"><{0} src="media/{1}" style="width:200px;"{2}></a>'
+		media_type = row[1].split("/")[0]
+		tag = {"video": "video", "image": "img"}.get(media_type, None)
+		if tag is None:
+			media_element = "[unknown attachment type: {}]".format(media_type)
+		else:
+			controls = " controls" if tag in ["audio", "video"] else ""
+			media_element = tag_format.format(tag, os.path.basename(new_media_path), controls)
+		if "\ufffc" in mtext: 		# "obj" marker for attachments
+			mtext = mtext.replace("\ufffc", media_element, 1)
+		else:
+			mtext = mtext + media_element
+	return mtext
+
+def get_filename(conn, contact_conn, chat_id):
+	c = conn.cursor()
+	c.execute("SELECT handle_id FROM chat_handle_join WHERE chat_id=?;", (chat_id,))
+	names_in_chat = []
+	for row in c:
+		names_in_chat.append(get_contact_name(conn, contact_conn, row[0]))
+	filename = sanitize_filename(" & ".join(names_in_chat))
+	filename = os.path.join(OUTPUT_DIR, '%s.html' % filename)
+	return filename
+
+def output_contact(conn, contact_conn, backup_extractor, chat_id, your_name):
+	reset_colors()
+	contact_name = str(chat_id)
+	html = open(get_filename(conn, contact_conn, chat_id), 'w', encoding="utf-8")
+	html.write(TEMPLATEBEGINNING % ("SMS/iMessage",))
+	c = conn.cursor()
+	c.execute("SELECT {} FROM message WHERE ROWID in ".format(FIELDS) + \
+		      "(SELECT message_id FROM chat_message_join WHERE chat_id=?);", (chat_id,))
+	for row in c:
+		mid, mtext, mdate, is_from_me, handle_id, has_attachment = row
+		if has_attachment:
+			mtext = handle_media(conn, backup_extractor, mid, mtext)
+		mtext = mtext.replace("\n", "<br>\n")
+		mdatetime = get_date(mdate)
+		mfrom = your_name if is_from_me else get_contact_name(conn, contact_conn, handle_id)
+		color = COLORS[0] if is_from_me else get_color(handle_id)
+		html.write((ROWTEMPLATE % (color, mdatetime, mfrom, mtext)))
+	html.write(TEMPLATEEND)
+	html.close()
 
 def main(backup_extractor):
 	contact_conn = sqlite3.connect(CONTACT_FILE)
 	conn = sqlite3.connect(CHAT_STORAGE_FILE)
 	c = conn.cursor()
-	c.execute("SELECT COUNT(*) FROM handle")
+	c.execute("SELECT COUNT(*) FROM chat")
 	total_contacts = next(c)[0]
 	c = conn.cursor()
-	c.execute("SELECT ROWID FROM handle")
-	for contact_id in iterate_with_progress(c, total_contacts):
-		contact_id = str(contact_id[0])
-		contact_name = get_contact_name(conn, contact_conn, contact_id)
-		output_contact(conn, backup_extractor, contact_id, contact_name, "me")
+	c.execute("SELECT ROWID FROM chat")
+	for chat_id in iterate_with_progress(c, total_contacts):
+		output_contact(conn, contact_conn, backup_extractor, chat_id[0], "me")
