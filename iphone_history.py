@@ -4,8 +4,8 @@ import sys
 import re
 import datetime
 import mbdb
-import chat_output
-import sms_output as sms_output
+import whatsapp
+import sms
 
 class BackupExtractor():
 	def _backup_time(self, backup_dir):
@@ -71,9 +71,9 @@ def main_whatsapp(backup_extractor):
 		print("Could not find WhatsApp Chat file")
 		return
 
-	shutil.copy(whatsapp_chat_file, chat_output.CHAT_STORAGE_FILE)
-	chat_output.main(backup_extractor)
-	os.remove(chat_output.CHAT_STORAGE_FILE)
+	shutil.copy(whatsapp_chat_file, whatsapp.CHAT_STORAGE_FILE)
+	whatsapp.main(backup_extractor)
+	os.remove(whatsapp.CHAT_STORAGE_FILE)
 
 def main_sms(backup_extractor):
 	sms_db_file = backup_extractor.get_file_path("HomeDomain", "Library/SMS/sms.db")
@@ -83,11 +83,11 @@ def main_sms(backup_extractor):
 		print("Could not find SMS files")
 		return
 
-	shutil.copy(sms_db_file, sms_output.CHAT_STORAGE_FILE)
-	shutil.copy(addressbook, sms_output.CONTACT_FILE)
-	sms_output.main(backup_extractor)
-	os.remove(sms_output.CHAT_STORAGE_FILE)
-	os.remove(sms_output.CONTACT_FILE)
+	shutil.copy(sms_db_file, sms.CHAT_STORAGE_FILE)
+	shutil.copy(addressbook, sms.CONTACT_FILE)
+	sms.main(backup_extractor)
+	os.remove(sms.CHAT_STORAGE_FILE)
+	os.remove(sms.CONTACT_FILE)
 
 def main():
 	backup_extractor = BackupExtractor()

@@ -1,69 +1,13 @@
 import sqlite3
-from time import strftime
-from datetime import datetime
 import os
 import shutil
 import codecs
 
-COLORS = ["#f8ff78", "#85d7ff", "cornsilk", "lightpink", "lightgreen", "yellowgreen", "lightgrey", "khaki", "mistyrose"]
+from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_DIR, MEDIA_DIR
+from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress
 
-TEMPLATEBEGINNING = """
-<html>
-<head>
-<title>%s Conversation</title>
-<meta charset="utf-8">
-<style type="text/css">
-body {
-	font-family: Helvetica Neue;
-}
-td {
-	font-size: .8em;
-	max-width: 800px;
-}
-</style>
-</head>
-<body>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>From</th>
-<th>Content</th>
-</tr>
-</thead>
-<tbody>
-"""
-
-TEMPLATEEND = """
-</tbody>
-</table></body>
-</html>
-"""
-
-ROWTEMPLATE = """<tr style="background-color: %s"><td>%s</td><td>%s</td><td>%s</td></tr>"""
-
-OUTPUT_DIR = "output_%s" % (strftime("%Y_%m_%d"))
-MEDIA_DIR = os.path.join(OUTPUT_DIR, "media")
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
-if not os.path.exists(MEDIA_DIR):
-	os.makedirs(MEDIA_DIR)
-
 FIELDS = "ZFROMJID, ZTEXT, ZMESSAGEDATE, ZMESSAGETYPE, ZGROUPEVENTTYPE, ZGROUPMEMBER, ZMEDIAITEM"
-
-cached_colors = {}
-next_color = 0
-def get_color(contact):
-	global next_color
-	if contact in cached_colors:
-		return cached_colors[contact]
-	cached_colors[contact] = COLORS[1:][next_color % (len(COLORS) - 1)]
-	next_color += 1
-	return cached_colors[contact]
-
-def reset_colors():
-	global next_color, cached_colors
-	cached_colors = {}
-	next_color = 0
 
 cached_members = {}
 def get_group_member_name(conn, id):
@@ -134,18 +78,6 @@ def get_from(conn, is_group, contact_id, contact_name, your_name, row):
 	color = get_color(mfrom)
 	return mfrom, color
 
-def get_date(mdate):
-	mdatetime = datetime.fromtimestamp(int(mdate))
-	mdatetime = mdatetime.replace(year=mdatetime.year + 31)
-	mdatetime = mdatetime.strftime("%Y-%m-%d %H:%M:%S")
-	return mdatetime
-
-def sanitize_filename(f):
-	invalid_chars = "?*/\\:\"<>|"
-	for char in invalid_chars:
-		f = f.replace(char, "-")
-	return f
-
 def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, your_name):
 	reset_colors()
 	html = open(os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name)), 'w', encoding="utf-8")
@@ -159,17 +91,6 @@ def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, y
 		html.write((ROWTEMPLATE % (color, mdatetime, mfrom, mtext)))
 	html.write(TEMPLATEEND)
 	html.close()
-
-def iterate_with_progress(iterator, count):
-	previouspercent = 0
-	for index, value in enumerate(iterator):
-		yield value
-		percent = round((float(index+1) / count*100))
-		if percent != previouspercent:
-			bar = "[%s%s]" % ("#"*int(percent/10),"-"*(10-int(percent/10)))
-			print("%s %d%% done" % (bar, percent), end="\r")
-			previouspercent = percent
-	print()
 
 def main(backup_extractor):
 	conn = sqlite3.connect(CHAT_STORAGE_FILE)

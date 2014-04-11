@@ -2,8 +2,8 @@ import sqlite3
 import os
 import shutil
 
-from chat_output import iterate_with_progress, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_DIR, MEDIA_DIR
-from chat_output import COLORS, get_color, reset_colors, sanitize_filename, get_date
+from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_DIR, MEDIA_DIR
+from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "sms.db")
 CONTACT_FILE = os.path.join(OUTPUT_DIR, "AddressBook.sqlitedb")
