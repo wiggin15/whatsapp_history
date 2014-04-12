@@ -81,3 +81,4 @@ def iterate_with_progress(iterator, count):
 			print("%s %d%% done" % (bar, percent), end="\r")
 			previouspercent = percent
 	print()
+	

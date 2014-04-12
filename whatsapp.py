@@ -7,6 +7,8 @@ from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_D
 from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
+FILES = [("AppDomain-net.whatsapp.WhatsApp", "Documents/ChatStorage.sqlite", CHAT_STORAGE_FILE)]
+
 FIELDS = "ZFROMJID, ZTEXT, ZMESSAGEDATE, ZMESSAGETYPE, ZGROUPEVENTTYPE, ZGROUPMEMBER, ZMEDIAITEM"
 
 cached_members = {}

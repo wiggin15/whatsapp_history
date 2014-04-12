@@ -6,7 +6,10 @@ from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_D
 from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "sms.db")
-CONTACT_FILE = os.path.join(OUTPUT_DIR, "AddressBook.sqlitedb")
+CONTACTS_FILE = os.path.join(OUTPUT_DIR, "AddressBook.sqlitedb")
+
+FILES = [("HomeDomain", "Library/SMS/sms.db", CHAT_STORAGE_FILE),
+         ("HomeDomain", "Library/AddressBook/AddressBook.sqlitedb", CONTACTS_FILE)]
 
 FIELDS = "ROWID, text, date, is_from_me, handle_id, cache_has_attachments"
 
@@ -91,7 +94,7 @@ def output_contact(conn, contact_conn, backup_extractor, chat_id, your_name):
 	html.close()
 
 def main(backup_extractor):
-	contact_conn = sqlite3.connect(CONTACT_FILE)
+	contact_conn = sqlite3.connect(CONTACTS_FILE)
 	conn = sqlite3.connect(CHAT_STORAGE_FILE)
 	c = conn.cursor()
 	c.execute("SELECT COUNT(*) FROM chat")

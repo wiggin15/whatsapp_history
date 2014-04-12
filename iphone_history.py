@@ -8,6 +8,24 @@ import whatsapp
 import sms
 
 class BackupExtractor():
+	def __init__(self):
+		backup_folder = self._get_backup_folder()
+		if backup_folder is None:
+			print("Could not find backup folder")
+			sys.exit()
+
+		mbdb_file = os.path.join(backup_folder, "Manifest.mbdb")
+
+		files_in_backup = mbdb.process_mbdb_file(mbdb_file)
+
+		# file index: map domain+filename to physical file in backup directory
+		self.file_index = {}
+		for f in files_in_backup:
+			domain = str(f['domain'], "ascii")
+			filename = str(f['filename'], "ascii")
+			file_path = os.path.join(backup_folder, str(f['fileID']))
+			self.file_index[(domain, filename)] = file_path
+
 	def _backup_time(self, backup_dir):
 		# time of backup is stored in info.plist, which is in xml format
 		info_file = os.path.join(backup_dir, "Info.plist")
@@ -43,58 +61,31 @@ class BackupExtractor():
 
 		return result
 
-	def __init__(self):
-		backup_folder = self._get_backup_folder()
-		if backup_folder is None:
-			print("Could not find backup folder")
-			sys.exit()
-
-		mbdb_file = os.path.join(backup_folder, "Manifest.mbdb")
-
-		files_in_backup = mbdb.process_mbdb_file(mbdb_file)
-
-		# file index: map domain+filename to physical file in backup directory
-		self.file_index = {}
-		for f in files_in_backup:
-			domain = str(f['domain'], "ascii")
-			filename = str(f['filename'], "ascii")
-			file_path = os.path.join(backup_folder, str(f['fileID']))
-			self.file_index[(domain, filename)] = file_path
-
 	def get_file_path(self, domain, filename):
 		return self.file_index.get((domain, filename), None)
-
-def main_whatsapp(backup_extractor):
-	whatsapp_chat_file = backup_extractor.get_file_path("AppDomain-net.whatsapp.WhatsApp", "Documents/ChatStorage.sqlite")
-
-	if whatsapp_chat_file is None:
-		print("Could not find WhatsApp Chat file")
-		return
-
-	shutil.copy(whatsapp_chat_file, whatsapp.CHAT_STORAGE_FILE)
-	whatsapp.main(backup_extractor)
-	os.remove(whatsapp.CHAT_STORAGE_FILE)
-
-def main_sms(backup_extractor):
-	sms_db_file = backup_extractor.get_file_path("HomeDomain", "Library/SMS/sms.db")
-	addressbook = backup_extractor.get_file_path("HomeDomain", "Library/AddressBook/AddressBook.sqlitedb")
-
-	if sms_db_file is None or addressbook is None:
-		print("Could not find SMS files")
-		return
-
-	shutil.copy(sms_db_file, sms.CHAT_STORAGE_FILE)
-	shutil.copy(addressbook, sms.CONTACT_FILE)
-	sms.main(backup_extractor)
-	os.remove(sms.CHAT_STORAGE_FILE)
-	os.remove(sms.CONTACT_FILE)
 
 def main():
 	backup_extractor = BackupExtractor()
 	if len(sys.argv) == 2 and sys.argv[1] == "sms":
-		main_sms(backup_extractor)
+		lib = sms
 	else:
-		main_whatsapp(backup_extractor)
+		lib = whatsapp
+
+	files_to_copy = []
+	for domain, filename, new_file_path in lib.FILES:
+		existing_file_path = backup_extractor.get_file_path(domain, filename)
+		if existing_file_path is None:
+			print("Could not find file in backup: {}/{}".format(domain, filename))
+			return
+		files_to_copy.append((existing_file_path, new_file_path))
+
+	for existing_file_path, new_file_path in files_to_copy:
+		shutil.copy(existing_file_path, new_file_path)
+
+	lib.main(backup_extractor)
+
+	for existing_file_path, new_file_path in files_to_copy:
+		os.remove(new_file_path)
 
 if __name__ == "__main__":
 	main()
