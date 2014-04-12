@@ -11,23 +11,23 @@ TEMPLATEBEGINNING = """
 <meta charset="utf-8">
 <style type="text/css">
 body {
-	font-family: Helvetica Neue;
+    font-family: "Helvetica Neue", Arial, sans-serif;
 }
-td {
-	font-size: .8em;
-	max-width: 800px;
+.main td {
+    max-width: 800px;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-bottom: 5px solid #fff;
+}
+.main td:first-child {
+    white-space: nowrap;
+    color: #666;
+    font-size: 13px;
 }
 </style>
 </head>
 <body>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>From</th>
-<th>Content</th>
-</tr>
-</thead>
+<table class="main" cellpadding="0" cellspacing="0">
 <tbody>
 """
 
