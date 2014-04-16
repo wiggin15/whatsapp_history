@@ -66,26 +66,23 @@ class BackupExtractor():
 
 def main():
 	backup_extractor = BackupExtractor()
-	if len(sys.argv) == 2 and sys.argv[1] == "sms":
-		lib = sms
-	else:
-		lib = whatsapp
 
-	files_to_copy = []
-	for domain, filename, new_file_path in lib.FILES:
-		existing_file_path = backup_extractor.get_file_path(domain, filename)
-		if existing_file_path is None:
-			print("Could not find file in backup: {}/{}".format(domain, filename))
-			return
-		files_to_copy.append((existing_file_path, new_file_path))
+	for lib in [whatsapp, sms]:
+		files_to_copy = []
+		for domain, filename, new_file_path in lib.FILES:
+			existing_file_path = backup_extractor.get_file_path(domain, filename)
+			if existing_file_path is None:
+				print("Could not find file in backup: {}/{}".format(domain, filename))
+				return
+			files_to_copy.append((existing_file_path, new_file_path))
 
-	for existing_file_path, new_file_path in files_to_copy:
-		shutil.copy(existing_file_path, new_file_path)
+		for existing_file_path, new_file_path in files_to_copy:
+			shutil.copy(existing_file_path, new_file_path)
 
-	lib.main(backup_extractor)
+		lib.main(backup_extractor)
 
-	for existing_file_path, new_file_path in files_to_copy:
-		os.remove(new_file_path)
+		for existing_file_path, new_file_path in files_to_copy:
+			os.remove(new_file_path)
 
 if __name__ == "__main__":
 	main()

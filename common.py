@@ -39,10 +39,12 @@ TEMPLATEEND = """
 
 ROWTEMPLATE = """<tr style="background-color: %s"><td>%s</td><td>%s</td><td>%s</td></tr>\n"""
 
-OUTPUT_DIR = "output_%s" % (strftime("%Y_%m_%d"))
-MEDIA_DIR = os.path.join(OUTPUT_DIR, "media")
-if not os.path.exists(MEDIA_DIR):
-	os.makedirs(MEDIA_DIR)
+def get_output_dirs(name):
+	OUTPUT_DIR = "output_%s_%s" % (strftime("%Y_%m_%d"), name)
+	MEDIA_DIR = os.path.join(OUTPUT_DIR, "media")
+	if not os.path.exists(MEDIA_DIR):
+		os.makedirs(MEDIA_DIR)
+	return OUTPUT_DIR, MEDIA_DIR
 
 cached_colors = {}
 next_color = 0
@@ -71,14 +73,14 @@ def sanitize_filename(f):
 		f = f.replace(char, "-")
 	return f
 
-def iterate_with_progress(iterator, count):
+def iterate_with_progress(iterator, count, name):
 	previouspercent = 0
 	for index, value in enumerate(iterator):
 		yield value
 		percent = round((float(index+1) / count*100))
 		if percent != previouspercent:
 			bar = "[%s%s]" % ("#"*int(percent/10),"-"*(10-int(percent/10)))
-			print("%s %d%% done" % (bar, percent), end="\r")
+			print("{:10s} {} {}% done".format(name, bar, percent), end="\r")
 			previouspercent = percent
 	print()
-	
+

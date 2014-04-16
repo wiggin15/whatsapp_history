@@ -3,8 +3,10 @@ import os
 import shutil
 import codecs
 
-from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_DIR, MEDIA_DIR
-from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress
+from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE
+from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress, get_output_dirs
+
+OUTPUT_DIR, MEDIA_DIR = get_output_dirs("whatsapp")
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
 FILES = [("AppDomain-net.whatsapp.WhatsApp", "Documents/ChatStorage.sqlite", CHAT_STORAGE_FILE)]
@@ -101,5 +103,5 @@ def main(backup_extractor):
 	total_contacts = next(c)[0]
 	c = conn.cursor()
 	c.execute("SELECT ZCONTACTJID, ZPARTNERNAME, ZSESSIONTYPE FROM ZWACHATSESSION")
-	for contact_id, contact_name, is_group in iterate_with_progress(c, total_contacts):
+	for contact_id, contact_name, is_group in iterate_with_progress(c, total_contacts, "WhatsApp"):
 		output_contact(conn, backup_extractor, is_group, contact_id, contact_name, "me")

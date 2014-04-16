@@ -2,8 +2,10 @@ import sqlite3
 import os
 import shutil
 
-from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE, OUTPUT_DIR, MEDIA_DIR
-from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress
+from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE
+from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress, get_output_dirs
+
+OUTPUT_DIR, MEDIA_DIR = get_output_dirs("sms")
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "sms.db")
 CONTACTS_FILE = os.path.join(OUTPUT_DIR, "AddressBook.sqlitedb")
@@ -101,5 +103,5 @@ def main(backup_extractor):
 	total_contacts = next(c)[0]
 	c = conn.cursor()
 	c.execute("SELECT ROWID FROM chat")
-	for chat_id in iterate_with_progress(c, total_contacts):
+	for chat_id in iterate_with_progress(c, total_contacts, "SMS"):
 		output_contact(conn, contact_conn, backup_extractor, chat_id[0], "me")
