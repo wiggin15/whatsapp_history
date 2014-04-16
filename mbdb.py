@@ -84,11 +84,11 @@ def fileinfo_str(f, verbose=False):
     if (f['mode'] & 0xE000) == 0xA000: type = 'l' # symlink
     elif (f['mode'] & 0xE000) == 0x8000: type = '-' # file
     elif (f['mode'] & 0xE000) == 0x4000: type = 'd' # dir
-    else: 
+    else:
         print("Unknown file type %04x for %s" % (f['mode'], fileinfo_str(f, False)), file=sys.stderr)
         type = '?' # unknown
-    info = ("%s%s %08x %08x %7d %10d %10d %10d (%s)%s::%s" % 
-            (type, modestr(f['mode']&0x0FFF) , f['userid'], f['groupid'], f['filelen'], 
+    info = ("%s%s %08x %08x %7d %10d %10d %10d (%s)%s::%s" %
+            (type, modestr(f['mode']&0x0FFF) , f['userid'], f['groupid'], f['filelen'],
              f['mtime'], f['atime'], f['ctime'], f['fileID'], f['domain'], f['filename']))
     if type == 'l': info = info + ' -> ' + f['linktarget'] # symlink destination
     for name, value in f['properties'].items(): # extra properties
