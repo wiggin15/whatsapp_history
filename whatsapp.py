@@ -1,66 +1,17 @@
-#!/usr/bin/env python
-
 import sqlite3
-from time import strftime
-from datetime import datetime
 import os
 import shutil
 import codecs
 
-COLORS = ["#f8ff78", "#85d7ff", "cornsilk", "lightpink", "lightgreen", "yellowgreen", "lightgrey", "khaki", "mistyrose"]
+from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE
+from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress, get_output_dirs
 
-TEMPLATEBEGINNING = """
-<html>
-<head>
-<title>WhatsApp Conversation</title>
-<meta charset="utf-8">
-<style type="text/css">
-body {
-	font-family: Helvetica Neue;
-}
-td {
-	font-size: .8em;
-	max-width: 800px;
-}
-</style>
-</head>
-<body>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>From</th>
-<th>Content</th>
-</tr>
-</thead>
-<tbody>
-"""
+OUTPUT_DIR, MEDIA_DIR = get_output_dirs("whatsapp")
 
-TEMPLATEEND = """
-</tbody>
-</table></body>
-</html>
-"""
-
-ROWTEMPLATE = """<tr style="background-color: %s"><td>%s</td><td>%s</td><td>%s</td></tr>"""
-
-OUTPUT_DIR = "output_%s" % (strftime("%Y_%m_%d"))
-MEDIA_DIR = os.path.join(OUTPUT_DIR, "media")
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
-if not os.path.exists(MEDIA_DIR):
-	os.makedirs(MEDIA_DIR)
+FILES = [("AppDomain-net.whatsapp.WhatsApp", "Documents/ChatStorage.sqlite", CHAT_STORAGE_FILE)]
 
 FIELDS = "ZFROMJID, ZTEXT, ZMESSAGEDATE, ZMESSAGETYPE, ZGROUPEVENTTYPE, ZGROUPMEMBER, ZMEDIAITEM"
-
-cached_colors = {}
-next_color = 0
-def get_color(contact):
-	global next_color
-	if contact in cached_colors:
-		return cached_colors[contact]
-	cached_colors[contact] = COLORS[1:][next_color % (len(COLORS) - 1)]
-	next_color += 1
-	return cached_colors[contact]
 
 cached_members = {}
 def get_group_member_name(conn, id):
@@ -91,7 +42,7 @@ def handle_media(conn, backup_extractor, mtype, mmediaitem):
 		shutil.copy(filepath, new_media_path)
 		tag_format = '<a href="media/{1}"><{0} src="media/{1}" style="width:200px;"{2}></a>'
 		tag = ["img", "video", "audio"][mtype-1]
-		controls = "" if mtype == 1 else " controls"
+		controls = " controls" if tag in ["audio", "video"] else ""
 		return tag_format.format(tag, os.path.basename(new_media_path), controls)
 	if mtype == 4 and data.startswith("="):
 		# if the vCard has no contact image the format of the row in the db is a little different,
@@ -131,23 +82,10 @@ def get_from(conn, is_group, contact_id, contact_name, your_name, row):
 	color = get_color(mfrom)
 	return mfrom, color
 
-def get_date(mdate):
-	mdatetime = datetime.fromtimestamp(int(mdate))
-	mdatetime = mdatetime.replace(year=mdatetime.year + 31)
-	mdatetime = mdatetime.strftime("%Y-%m-%d %H:%M:%S")
-	return mdatetime
-
-def sanitize_filename(f):
-	invalid_chars = "?*/\\:\"<>|"
-	for char in invalid_chars:
-		f = f.replace(char, "-")
-	return f
-
 def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, your_name):
-	global next_color
-	next_color = 0
+	reset_colors()
 	html = open(os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name)), 'w', encoding="utf-8")
-	html.write(TEMPLATEBEGINNING)
+	html.write(TEMPLATEBEGINNING % ("WhatsApp",))
 	c = conn.cursor()
 	c.execute("SELECT {} FROM ZWAMESSAGE WHERE ZFROMJID=? OR ZTOJID=?;".format(FIELDS), (contact_id, contact_id))
 	for row in c:
@@ -158,16 +96,6 @@ def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, y
 	html.write(TEMPLATEEND)
 	html.close()
 
-def iterate_with_progress(iterator, count):
-	previouspercent = 0
-	for index, value in enumerate(iterator):
-		yield value
-		percent = round((float(index+1) / count*100))
-		if percent != previouspercent:
-			bar = "[%s%s]" % ("#"*int(percent/10),"-"*(10-int(percent/10)))
-			print("%s %d%% done" % (bar, percent), end="\r")
-			previouspercent = percent
-
 def main(backup_extractor):
 	conn = sqlite3.connect(CHAT_STORAGE_FILE)
 	c = conn.cursor()
@@ -175,5 +103,5 @@ def main(backup_extractor):
 	total_contacts = next(c)[0]
 	c = conn.cursor()
 	c.execute("SELECT ZCONTACTJID, ZPARTNERNAME, ZSESSIONTYPE FROM ZWACHATSESSION")
-	for contact_id, contact_name, is_group in iterate_with_progress(c, total_contacts):
+	for contact_id, contact_name, is_group in iterate_with_progress(c, total_contacts, "WhatsApp"):
 		output_contact(conn, backup_extractor, is_group, contact_id, contact_name, "me")
