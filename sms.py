@@ -15,6 +15,8 @@ FILES = [("HomeDomain", "Library/SMS/sms.db", CHAT_STORAGE_FILE),
 
 FIELDS = "ROWID, text, date, is_from_me, handle_id, cache_has_attachments"
 
+OBJ_MARKER = "\ufffc"
+
 contact_cache = {}
 def get_contact_name(conn, contact_conn, contact_id):
 	if contact_id in contact_cache:
@@ -36,6 +38,16 @@ def get_contact_name(conn, contact_conn, contact_id):
 	contact_cache[contact_id] = handle_id
 	return handle_id
 
+def copy_media_file(backup_extractor, path_in_backup):
+	if path_in_backup.startswith("/var/mobile/"):
+		path_in_backup = path_in_backup[12:]
+	elif path_in_backup.startswith("~/"):
+		path_in_backup = path_in_backup[2:]
+	filepath = backup_extractor.get_file_path("MediaDomain", path_in_backup)
+	new_media_path = os.path.join(MEDIA_DIR, os.path.basename(path_in_backup))
+	shutil.copy(filepath, new_media_path)
+	return new_media_path
+
 def handle_media(conn, backup_extractor, message_id, mtext):
 	c = conn.cursor()
 	c.execute("SELECT filename, mime_type FROM attachment WHERE ROWID in "\
@@ -43,14 +55,7 @@ def handle_media(conn, backup_extractor, message_id, mtext):
 	if mtext is None:
 		mtext = ""
 	for row in c:
-		path_in_backup = row[0]
-		if path_in_backup.startswith("/var/mobile/"):
-			path_in_backup = path_in_backup[12:]
-		elif path_in_backup.startswith("~/"):
-			path_in_backup = path_in_backup[2:]
-		filepath = backup_extractor.get_file_path("MediaDomain", path_in_backup)
-		new_media_path = os.path.join(MEDIA_DIR, os.path.basename(path_in_backup))
-		shutil.copy(filepath, new_media_path)
+		new_media_path = copy_media_file(backup_extractor, row[0])
 		tag_format = '<a href="media/{1}"><{0} src="media/{1}" style="width:200px;"{2}></a>'
 		media_type = row[1].split("/")[0]
 		tag = {"video": "video", "image": "img"}.get(media_type, None)
@@ -59,8 +64,8 @@ def handle_media(conn, backup_extractor, message_id, mtext):
 		else:
 			controls = " controls" if tag in ["audio", "video"] else ""
 			media_element = tag_format.format(tag, os.path.basename(new_media_path), controls)
-		if "\ufffc" in mtext: 		# "obj" marker for attachments
-			mtext = mtext.replace("\ufffc", media_element, 1)
+		if OBJ_MARKER in mtext:
+			mtext = mtext.replace(OBJ_MARKER, media_element, 1)
 		else:
 			mtext = mtext + media_element
 	return mtext

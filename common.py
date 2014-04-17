@@ -1,5 +1,6 @@
 from time import strftime
 import os
+import sys
 from datetime import datetime
 
 COLORS = ["#f8ff78", "#85d7ff", "cornsilk", "lightpink", "lightgreen", "yellowgreen", "lightgrey", "khaki", "mistyrose"]
@@ -81,6 +82,7 @@ def iterate_with_progress(iterator, count, name):
 		if percent != previouspercent:
 			bar = "[%s%s]" % ("#"*int(percent/10),"-"*(10-int(percent/10)))
 			print("{:10s} {} {}% done".format(name, bar, percent), end="\r")
+			sys.stdout.flush()
 			previouspercent = percent
 	print()
 

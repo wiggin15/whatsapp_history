@@ -27,6 +27,13 @@ def get_media_data(conn, mediaid, cols):
 	c.execute("SELECT {} FROM ZWAMEDIAITEM WHERE Z_PK=?".format(cols), (mediaid,))
 	return next(c)
 
+def copy_media_file(backup_extractor, path_in_backup):
+	path_in_backup = "Library" + ("" if path_in_backup.startswith("/") else "/") + path_in_backup
+	filepath = backup_extractor.get_file_path("AppDomain-net.whatsapp.WhatsApp", path_in_backup)
+	new_media_path = os.path.join(MEDIA_DIR, os.path.basename(path_in_backup))
+	shutil.copy(filepath, new_media_path)
+	return new_media_path
+
 def handle_media(conn, backup_extractor, mtype, mmediaitem):
 	mediadata = ["ZMEDIALOCALPATH", "ZMEDIALOCALPATH", "ZMEDIALOCALPATH", "ZVCARDNAME",
 	             "ZLATITUDE, ZLONGITUDE"][mtype-1]
@@ -36,10 +43,7 @@ def handle_media(conn, backup_extractor, mtype, mmediaitem):
 		return "[missing {}]".format(mtypestr)
 	data = ", ".join([str(x) for x in data])
 	if mtype in [1, 2, 3]:
-		data = "Library" + ("" if data.startswith("/") else "/") + data
-		filepath = backup_extractor.get_file_path("AppDomain-net.whatsapp.WhatsApp", data)
-		new_media_path = os.path.join(MEDIA_DIR, os.path.basename(data))
-		shutil.copy(filepath, new_media_path)
+		new_media_path = copy_media_file(backup_extractor, data)
 		tag_format = '<a href="media/{1}"><{0} src="media/{1}" style="width:200px;"{2}></a>'
 		tag = ["img", "video", "audio"][mtype-1]
 		controls = " controls" if tag in ["audio", "video"] else ""

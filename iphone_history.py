@@ -64,25 +64,28 @@ class BackupExtractor():
 	def get_file_path(self, domain, filename):
 		return self.file_index.get((domain, filename), None)
 
+def lib_main(backup_extractor, lib):
+	files_to_copy = []
+	for domain, filename, new_file_path in lib.FILES:
+		existing_file_path = backup_extractor.get_file_path(domain, filename)
+		if existing_file_path is None:
+			print("Could not find file in backup: {}/{}".format(domain, filename))
+			return
+		files_to_copy.append((existing_file_path, new_file_path))
+
+	for existing_file_path, new_file_path in files_to_copy:
+		shutil.copy(existing_file_path, new_file_path)
+
+	lib.main(backup_extractor)
+
+	for existing_file_path, new_file_path in files_to_copy:
+		os.remove(new_file_path)
+
 def main():
 	backup_extractor = BackupExtractor()
 
 	for lib in [whatsapp, sms]:
-		files_to_copy = []
-		for domain, filename, new_file_path in lib.FILES:
-			existing_file_path = backup_extractor.get_file_path(domain, filename)
-			if existing_file_path is None:
-				print("Could not find file in backup: {}/{}".format(domain, filename))
-				return
-			files_to_copy.append((existing_file_path, new_file_path))
-
-		for existing_file_path, new_file_path in files_to_copy:
-			shutil.copy(existing_file_path, new_file_path)
-
-		lib.main(backup_extractor)
-
-		for existing_file_path, new_file_path in files_to_copy:
-			os.remove(new_file_path)
+		lib_main(backup_extractor, lib)
 
 if __name__ == "__main__":
 	main()
