@@ -1,23 +1,30 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import sys
 import hashlib
 
 mbdx = {}
 
+def o(b):
+    try:
+        return ord(b)
+    except:
+        return b
+
 def getint(data, offset, intsize):
     """Retrieve an integer (big-endian) and new offset from the current offset"""
     value = 0
     while intsize > 0:
-        value = (value<<8) + data[offset]
+        value = (value << 8) + o(data[offset])
         offset = offset + 1
         intsize = intsize - 1
     return value, offset
 
 def getstring(data, offset):
     """Retrieve a string and new offset from the current offset into the data"""
-    if data[offset] == 0xFF and data[offset+1] == 0xFF:
-        return '', offset+2 # Blank string
+    if o(data[offset]) == 0xFF and o(data[offset+1]) == 0xFF:
+        return '', offset + 2  # Blank string
     length, offset = getint(data, offset, 2) # 2-byte length
     value = data[offset:offset+length]
     return value, (offset + length)

@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import shutil
+from io import open
 
 from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE
 from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress, get_output_dirs
@@ -44,6 +45,8 @@ def copy_media_file(backup_extractor, path_in_backup):
 	elif path_in_backup.startswith("~/"):
 		path_in_backup = path_in_backup[2:]
 	filepath = backup_extractor.get_file_path("MediaDomain", path_in_backup)
+	if filepath is None:
+		return ""
 	new_media_path = os.path.join(MEDIA_DIR, os.path.basename(path_in_backup))
 	shutil.copy(filepath, new_media_path)
 	return new_media_path
@@ -52,8 +55,6 @@ def handle_media(conn, backup_extractor, message_id, mtext):
 	c = conn.cursor()
 	c.execute("SELECT filename, mime_type FROM attachment WHERE ROWID in "\
 		      "(SELECT attachment_id FROM message_attachment_join WHERE message_id=?);", (message_id,))
-	if mtext is None:
-		mtext = ""
 	for row in c:
 		new_media_path = copy_media_file(backup_extractor, row[0])
 		tag_format = '<a href="media/{1}"><{0} src="media/{1}" style="width:200px;"{2}></a>'
@@ -90,6 +91,8 @@ def output_contact(conn, contact_conn, backup_extractor, chat_id, your_name):
 		      "(SELECT message_id FROM chat_message_join WHERE chat_id=?);", (chat_id,))
 	for row in c:
 		mid, mtext, mdate, is_from_me, handle_id, has_attachment = row
+		if mtext is None:
+			mtext = ""
 		if has_attachment:
 			mtext = handle_media(conn, backup_extractor, mid, mtext)
 		mtext = mtext.replace("\n", "<br>\n")

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from time import strftime
 import os
 import sys
@@ -5,7 +6,7 @@ from datetime import datetime
 
 COLORS = ["#f8ff78", "#85d7ff", "cornsilk", "lightpink", "lightgreen", "yellowgreen", "lightgrey", "khaki", "mistyrose"]
 
-TEMPLATEBEGINNING = """
+TEMPLATEBEGINNING = u"""
 <html>
 <head>
 <title>%s Conversation</title>
@@ -32,13 +33,13 @@ body {
 <tbody>
 """
 
-TEMPLATEEND = """
+TEMPLATEEND = u"""
 </tbody>
 </table></body>
 </html>
 """
 
-ROWTEMPLATE = """<tr style="background-color: %s"><td>%s</td><td>%s</td><td>%s</td></tr>\n"""
+ROWTEMPLATE = u"""<tr style="background-color: %s"><td>%s</td><td>%s</td><td>%s</td></tr>\n"""
 
 def get_output_dirs(name):
 	OUTPUT_DIR = "output_%s_%s" % (strftime("%Y_%m_%d"), name)
@@ -64,7 +65,7 @@ def reset_colors():
 
 def get_date(mdate):
 	mdatetime = datetime.fromtimestamp(int(mdate))
-	mdatetime = mdatetime.replace(year=mdatetime.year + 31)
+	#mdatetime = mdatetime.replace(year=mdatetime.year + 31)
 	mdatetime = mdatetime.strftime("%Y-%m-%d %H:%M:%S")
 	return mdatetime
 

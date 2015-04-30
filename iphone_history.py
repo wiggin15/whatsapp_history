@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import shutil
 import sys
@@ -21,8 +22,8 @@ class BackupExtractor():
 		# file index: map domain+filename to physical file in backup directory
 		self.file_index = {}
 		for f in files_in_backup:
-			domain = str(f['domain'], "ascii")
-			filename = str(f['filename'], "ascii")
+			domain = f['domain'].decode("ascii")
+			filename = f['filename'].decode("ascii")
 			file_path = os.path.join(backup_folder, str(f['fileID']))
 			self.file_index[(domain, filename)] = file_path
 
@@ -51,6 +52,8 @@ class BackupExtractor():
 			return None
 
 		list_of_backups = os.listdir(backups_root)
+		if not list_of_backups:
+			return None
 		list_of_backups = [os.path.join(backups_root, d) for d in list_of_backups]
 		list_of_backups = [d for d in list_of_backups if os.path.isdir(d)]
 

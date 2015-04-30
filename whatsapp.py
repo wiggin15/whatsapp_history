@@ -2,14 +2,19 @@ import sqlite3
 import os
 import shutil
 import codecs
+from io import open
+import sys
 
 from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE
 from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress, get_output_dirs
 
+if sys.version[0] == "3":
+	unicode = str
+
 OUTPUT_DIR, MEDIA_DIR = get_output_dirs("whatsapp")
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
-FILES = [("AppDomain-net.whatsapp.WhatsApp", "Documents/ChatStorage.sqlite", CHAT_STORAGE_FILE)]
+FILES = [("AppDomainGroup-group.net.whatsapp.WhatsApp.shared", "ChatStorage.sqlite", CHAT_STORAGE_FILE)]
 
 FIELDS = "ZFROMJID, ZTEXT, ZMESSAGEDATE, ZMESSAGETYPE, ZGROUPEVENTTYPE, ZGROUPMEMBER, ZMEDIAITEM"
 
@@ -41,7 +46,7 @@ def handle_media(conn, backup_extractor, mtype, mmediaitem):
 	mtypestr = {1: "image", 2: "video", 3: "audio", 4: "contact", 5: "location"}[mtype]
 	if data[0] is None:
 		return "[missing {}]".format(mtypestr)
-	data = ", ".join([str(x) for x in data])
+	data = u", ".join([unicode(x) for x in data])
 	if mtype in [1, 2, 3]:
 		new_media_path = copy_media_file(backup_extractor, data)
 		tag_format = '<a href="media/{1}"><{0} src="media/{1}" style="width:200px;"{2}></a>'
@@ -52,10 +57,10 @@ def handle_media(conn, backup_extractor, mtype, mmediaitem):
 		# if the vCard has no contact image the format of the row in the db is a little different,
 		# and name is encoded using quopri encoding
 		try:
-			data = str(codecs.decode(bytes(data, "ascii"), "quopri"), "utf-8")
+			data = codecs.decode(data.decode("ascii"), "quopri").encode("utf-8")
 		except:
 			pass
-	return "[{} - {}]".format(mtypestr, data)
+	return u"[{} - {}]".format(mtypestr, data)
 
 def get_text(conn, backup_extractor, row):
 	mfrom, mtext, mdate, mtype, mgroupeventtype, mgroupmember, mmediaitem = row
@@ -64,13 +69,13 @@ def get_text(conn, backup_extractor, row):
 	if mtype == 6:
 		mgroupmember = "you" if mgroupmember is None else get_group_member_name(conn, mgroupmember)
 		if mgroupeventtype not in [1, 2, 3, 4]:
-			return "[group event {} by {}]".format(mgroupeventtype, mgroupmember)
-		change_text = {1: "changed the group subject to {}".format(mtext),
-		               2: "joined", 3: "left", 4: "changed the group photo"}
-		return "[{} {}]".format(mgroupmember, change_text[mgroupeventtype])
+			return u"[group event {} by {}]".format(mgroupeventtype, mgroupmember)
+		change_text = {1: u"changed the group subject to {}".format(mtext),
+		               2: u"joined", 3: u"left", 4: u"changed the group photo"}
+		return u"[{} {}]".format(mgroupmember, change_text[mgroupeventtype])
 	if mtype in [1, 2, 3, 4, 5]:
 		return handle_media(conn, backup_extractor, mtype, mmediaitem)
-	return "[message type %d]" % mtype
+	return u"[message type %d]" % mtype
 
 def get_from(conn, is_group, contact_id, contact_name, your_name, row):
 	mfrom, mtext, mdate, mtype, mgroupeventtype, mgroupmember, mmediaitem = row
