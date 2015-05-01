@@ -66,7 +66,7 @@ def reset_colors():
 def get_date(mdate):
 	# convert apple's "reference date" to unix timestamp
 	# (seconds between Jan 1 1970 and Jan 1 2001)
-	# http://stackoverflow.com/questions/6998541/convert-apples-cocoa-framework-epoch-reference-date-to-java-date
+	# http://stackoverflow.com/questions/6998541
 	mdate = int(mdate) + 978307200
 	mdatetime = datetime.fromtimestamp(mdate)
 	mdatetime = mdatetime.strftime("%Y-%m-%d %H:%M:%S")
