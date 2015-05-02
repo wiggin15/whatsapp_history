@@ -80,9 +80,14 @@ def get_latest_backup():
 	list_of_backups = [os.path.join(backups_root, backup) for backup in list_of_backups]
 	list_of_backups = [BackupExtractor(backup) for backup in list_of_backups if os.path.isdir(backup)]
 
-	list_of_backups.sort(reverse=True, key=lambda backup: backup.get_date())
+	list_of_backups.sort(key=lambda backup: backup.get_date())
 
-	return list_of_backups[0]
+	print("Choose backup:")
+	for i, backup in enumerate(list_of_backups, 1):
+		print("%d. %s %s" % (i, backup.get_device_name(), backup.get_date()))
+	index = int(input()) - 1
+
+	return list_of_backups[index]
 
 def lib_main(backup_extractor, lib):
 	files_to_copy = []
