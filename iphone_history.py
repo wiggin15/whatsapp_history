@@ -33,8 +33,8 @@ class BackupExtractor():
 		info_data = open(info_file, "r").read()
 		match_obj = re.search("<date>(.*?)</date>", info_data)
 		if match_obj is None:
-			print("Could not find date of backup from %s" % backup_dir)
-			sys.exit()
+			print("WARNING: Could not find date of backup from %s. Assigning oldest date" % backup_dir)
+			return datetime.datetime.fromtimestamp(0)
 		time_str = match_obj.group(1)
 		res = datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%SZ")
 		return res
