@@ -30,6 +30,9 @@ class BackupExtractor():
 	def _backup_time(self, backup_dir):
 		# time of backup is stored in info.plist, which is in xml format
 		info_file = os.path.join(backup_dir, "Info.plist")
+		if not os.path.exists(info_file):
+			print("WARNING: No Info.plist in backup %s. Assigning oldest date" % backup_dir)
+			return datetime.datetime.fromtimestamp(0)
 		info_data = open(info_file, "r").read()
 		match_obj = re.search("<date>(.*?)</date>", info_data)
 		if match_obj is None:
