@@ -54,8 +54,8 @@ class BackupExtractor(object):
 		# file index: map domain+filename to physical file in backup directory
 		self._file_index = dict()
 		for f in files_in_backup:
-			domain = f['domain'].decode("utf-8")
-			filename = f['filename'].decode("utf-8")
+			domain = f['domain'].decode("utf-8", errors="ignore")
+			filename = f['filename'].decode("utf-8", errors="ignore")
 			file_path = os.path.join(self._dir, str(f['fileID']))
 			self._file_index[(domain, filename)] = file_path
 		return self._file_index
