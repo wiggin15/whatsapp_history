@@ -14,7 +14,7 @@ if sys.version[0] == "3":
 OUTPUT_DIR, MEDIA_DIR = get_output_dirs("whatsapp")
 
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "ChatStorage.sqlite")
-FILES = [("AppDomainGroup-group.net.whatsapp.WhatsApp.shared", "ChatStorage.sqlite", CHAT_STORAGE_FILE)]
+FILES = [("AppDomain-net.whatsapp.WhatsApp", "Documents/ChatStorage.sqlite", CHAT_STORAGE_FILE)]
 
 FIELDS = "ZFROMJID, ZTEXT, ZMESSAGEDATE, ZMESSAGETYPE, ZGROUPEVENTTYPE, ZGROUPMEMBER, ZMEDIAITEM"
 
