@@ -82,10 +82,14 @@ def get_latest_backup():
 
 	list_of_backups.sort(key=lambda backup: backup.get_date())
 
-	print("Choose backup:")
-	for i, backup in enumerate(list_of_backups, 1):
-		print("%d. %s %s" % (i, backup.get_device_name(), backup.get_date()))
-	index = int(input()) - 1
+	choose = len(sys.argv) == 2 and sys.argv[-1] == "--choose"
+	if choose:
+		print("Choose backup:")
+		for i, backup in enumerate(list_of_backups, 1):
+			print("%d. %s %s" % (i, backup.get_device_name(), backup.get_date()))
+		index = int(input()) - 1
+	else:
+		index = -1		# latest backup
 
 	return list_of_backups[index]
 
