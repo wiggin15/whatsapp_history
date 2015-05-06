@@ -11,8 +11,8 @@ OUTPUT_DIR, MEDIA_DIR = get_output_dirs("sms")
 CHAT_STORAGE_FILE = os.path.join(OUTPUT_DIR, "sms.db")
 CONTACTS_FILE = os.path.join(OUTPUT_DIR, "AddressBook.sqlitedb")
 
-FILES = [("HomeDomain", "Library/SMS/sms.db", CHAT_STORAGE_FILE),
-         ("HomeDomain", "Library/AddressBook/AddressBook.sqlitedb", CONTACTS_FILE)]
+FILES = [(("HomeDomain", "Library/SMS/sms.db"), CHAT_STORAGE_FILE),
+         (("HomeDomain", "Library/AddressBook/AddressBook.sqlitedb"), CONTACTS_FILE)]
 
 FIELDS = "ROWID, text, date, is_from_me, handle_id, cache_has_attachments"
 

@@ -95,20 +95,27 @@ def get_latest_backup():
 
 def lib_main(backup_extractor, lib):
 	files_to_copy = []
-	for domain, filename, new_file_path in lib.FILES:
-		existing_file_path = backup_extractor.get_file_path(domain, filename)
+	for phone_path, file_path in lib.FILES:
+		# phone_path is either a tuple (domain, filename) or a list of such
+		# tuples (in which case, only one of the domain/filename should be copied)
+		if type(phone_path) == list:
+			existing_file_path = [backup_extractor.get_file_path(*one_path) for one_path in phone_path]
+			existing_file_path = [path for path in existing_file_path if path is not None]
+			existing_file_path = None if len(existing_file_path) == 0 else existing_file_path[0]
+		else:
+			existing_file_path = backup_extractor.get_file_path(*phone_path)
 		if existing_file_path is None:
-			print("Could not find file in backup: {}/{}".format(domain, filename))
+			print("Could not find file in backup: {}/{}".format(*phone_path))
 			return
-		files_to_copy.append((existing_file_path, new_file_path))
+		files_to_copy.append((existing_file_path, file_path))
 
-	for existing_file_path, new_file_path in files_to_copy:
-		shutil.copy(existing_file_path, new_file_path)
+	for existing_file_path, file_path in files_to_copy:
+		shutil.copy(existing_file_path, file_path)
 
 	lib.main(backup_extractor)
 
-	for existing_file_path, new_file_path in files_to_copy:
-		os.remove(new_file_path)
+	for existing_file_path, file_path in files_to_copy:
+		os.remove(file_path)
 
 def main():
 	backup_extractor = get_latest_backup()
