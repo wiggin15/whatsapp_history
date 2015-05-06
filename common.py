@@ -2,6 +2,7 @@ from __future__ import print_function
 from time import strftime
 import os
 import sys
+import shutil
 from datetime import datetime
 
 COLORS = ["#f8ff78", "#85d7ff", "cornsilk", "lightpink", "lightgreen", "yellowgreen", "lightgrey", "khaki", "mistyrose"]
@@ -43,9 +44,10 @@ ROWTEMPLATE = u"""<tr style="background-color: %s"><td>%s</td><td>%s</td><td>%s<
 
 def get_output_dirs(name):
 	OUTPUT_DIR = "output_%s_%s" % (strftime("%Y_%m_%d"), name)
+	if os.path.exists(OUTPUT_DIR):
+		shutil.rmtree(OUTPUT_DIR)
 	MEDIA_DIR = os.path.join(OUTPUT_DIR, "media")
-	if not os.path.exists(MEDIA_DIR):
-		os.makedirs(MEDIA_DIR)
+	os.makedirs(MEDIA_DIR)
 	return OUTPUT_DIR, MEDIA_DIR
 
 cached_colors = {}
@@ -77,6 +79,17 @@ def sanitize_filename(f):
 	for char in invalid_chars:
 		f = f.replace(char, "-")
 	return f
+
+def find_nonexisting_path(p):
+	# used to avoid duplicates running over each other
+	i = 1
+	basename = os.path.basename(p)
+	basename, ext = os.path.splitext(basename)
+	dirname = os.path.dirname(p)
+	while os.path.exists(p):
+		i += 1
+		p = os.path.join(dirname, "%s-%d%s" % (basename, i, ext))
+	return p
 
 def iterate_with_progress(iterator, count, name):
 	previouspercent = 0

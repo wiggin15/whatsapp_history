@@ -6,7 +6,8 @@ from io import open
 import sys
 
 from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE
-from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress, get_output_dirs
+from common import get_color, reset_colors, get_date, iterate_with_progress, get_output_dirs
+from common import sanitize_filename, find_nonexisting_path
 
 if sys.version[0] == "3":
 	unicode = str
@@ -94,7 +95,9 @@ def get_from(conn, is_group, contact_id, contact_name, your_name, row):
 
 def output_contact(conn, backup_extractor, is_group, contact_id, contact_name, your_name):
 	reset_colors()
-	html = open(os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name)), 'w', encoding="utf-8")
+	file_path = os.path.join(OUTPUT_DIR, '%s.html' % sanitize_filename(contact_name))
+	file_path = find_nonexisting_path(file_path)
+	html = open(file_path, 'w', encoding="utf-8")
 	html.write(TEMPLATEBEGINNING % ("WhatsApp",))
 	c = conn.cursor()
 	c.execute("SELECT {} FROM ZWAMESSAGE WHERE ZFROMJID=? OR ZTOJID=?;".format(FIELDS), (contact_id, contact_id))

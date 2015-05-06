@@ -4,7 +4,8 @@ import shutil
 from io import open
 
 from common import COLORS, TEMPLATEBEGINNING, TEMPLATEEND, ROWTEMPLATE
-from common import get_color, reset_colors, get_date, sanitize_filename, iterate_with_progress, get_output_dirs
+from common import get_color, reset_colors, get_date, iterate_with_progress, get_output_dirs
+from common import sanitize_filename, find_nonexisting_path
 
 OUTPUT_DIR, MEDIA_DIR = get_output_dirs("sms")
 
@@ -78,8 +79,9 @@ def get_filename(conn, contact_conn, chat_id):
 	for row in c:
 		names_in_chat.append(get_contact_name(conn, contact_conn, row[0]))
 	filename = sanitize_filename(" & ".join(names_in_chat))
-	filename = os.path.join(OUTPUT_DIR, '%s.html' % filename)
-	return filename
+	file_path = os.path.join(OUTPUT_DIR, '%s.html' % filename)
+	file_path = find_nonexisting_path(file_path)
+	return file_path
 
 def output_contact(conn, contact_conn, backup_extractor, chat_id, your_name):
 	reset_colors()
