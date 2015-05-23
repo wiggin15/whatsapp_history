@@ -25,7 +25,10 @@ def get_contact_name(conn, contact_conn, contact_id):
 		return contact_cache[contact_id]
 	c = conn.cursor()
 	c.execute("SELECT id FROM handle WHERE ROWID=?;", (contact_id,))
-	handle_id = next(c)[0]		# this is either a phone number or an iMessage address
+	try:
+		handle_id = next(c)[0]		# this is either a phone number or an iMessage address
+	except StopIteration:
+		handle_id = "UNKNOWN"
 	if handle_id.startswith("+"):
 		c = contact_conn.cursor()
 		p = handle_id.replace("+972", "0")
